@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>SupportBee Apps by SupportBee</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>SupportBee Apps</h1>
+        <h2>Bee Powered!</h2>
+        <a href="https://github.com/SupportBee/SupportBee-Apps" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h2>SupportBee App Platform</h2>
+
+<h3>Introduction</h3>
+
+<p>SupportBee Apps are the easiest, yet powerful way of extending/customizing SupportBee helpdesk. This platform exposes the API in a easily consumable way. The Apps are hosted on SupportBee servers.</p>
+
+<p>If you are new to SupportBee, please have a look at how it works <a href="https://supportbee.com">here</a></p>
+
+<h3>How does the App Platform Work?</h3>
+
+<p>An <strong>App</strong> is deeply integrated with SupportBee helpdesk. It can receive <strong>Events</strong> from SupportBee. It can also define <strong>Actions</strong>.  </p>
+
+<p><em>Events</em> are triggered by SupportBee during various times of the lifecycle of a ticket. Currently the platform supports the following <em>Events</em>:</p>
+
+<ul>
+<li>Ticket Created</li>
+<li>Agent Reply Created</li>
+<li>Customer Reply Created</li>
+<li>Comment Created<br>
+</li>
+</ul><p>An App can consume one, many or all events. For example an App can send an SMS to a cell when the event "Ticket Created" is triggered.</p>
+
+<p><em>Actions</em> are triggered by the user of SupportBee helpdesk from the User Interface. Currently the platform supports a single action called <em>Button</em>. If an App defines a Button action, a UI component is rendered for Ticket Listings in the SupportBee UI as shown below</p>
+
+<p><img src="http://i.imgur.com/1KURN.png" alt="The Button"></p>
+
+<p>We will go more into this later.</p>
+
+<h3>Writing an App</h3>
+
+<p>Checkout the App platform from github<br><code>git clone git://github.com/SupportBee/SupportBee-Apps.git</code></p>
+
+<p>Create a new branch with app_name as its name<br><code>git branch campfire</code></p>
+
+<p>Bundle install and run the server locally using shotgun<br><code>bundle install</code><br><code>shotgun</code></p>
+
+<p>Unfortunately, server requires a restart every time you change the app.</p>
+
+<p>An App resides in the <code>/apps</code> folder of the App Platform. Each app has the following structure:</p>
+
+<pre><code>dummy
+|--assets
+|  |--views
+|     |
+|
+|--dummy.rb
+|--config.yml
+</code></pre>
+
+<h4>config.yml</h4>
+
+<p>Each app has a <code>config.yml</code> where all the configurations of the app are defined. </p>
+
+<pre><code>name: Dummy
+slug: dummy
+access: public
+description: This is to test and a boilerplate app.
+developer: 
+  name: SupportBee
+  email: SupportBee
+  twitter: @supportbee
+  github: SupportBee
+action:
+  button:
+    screens: 
+    - all
+    - unassigned
+    listing: 
+    - all
+    label: Send To Dummy
+</code></pre>
+
+<p>The <code>slug</code> should be unique across the platform.</p>
+
+<h4>{slug}.rb</h4>
+
+<p>The app logic is defined in this file. The whole app can be defined in this single file or can be spread across multiple files which are required here. The basic structure is as follows:</p>
+
+<pre><code>module Dummy
+  module EventHandler
+    def ticket_created; end
+    def ticket_updated; end
+
+    def reply_created; end
+    def reply_updated; end
+
+    def all_events; end
+  end
+end
+
+module Dummy
+  module ActionHandler
+    def action_button
+     # Handle Action here
+    end
+
+    def all_actions
+    end
+  end
+end
+
+module Dummy
+  class Base &lt; SupportBeeApp::Base
+    string :name, :required =&gt; true
+    password :key, :required =&gt; true, :label =&gt; 'Token'
+    boolean :active, :default =&gt; true
+  end
+end
+</code></pre>
+
+<h4>Define Settings</h4>
+
+<p>An app can specify the settings required by it in the <code>Base</code> class. These settings are accepted when the app is added to a SupportBee helpdesk. </p>
+
+<pre><code>module Dummy
+  class Base &lt; SupportBeeApp::Base
+    string :name, :required =&gt; true
+    password :key, :required =&gt; true, :label =&gt; 'Token'
+    boolean :active, :default =&gt; true
+  end
+end
+</code></pre>
+
+<p>An app can define a <code>string</code>, <code>password</code> or a <code>boolean</code> type of setting. Each setting accepts a <code>name</code> of the settings and a set of options</p>
+
+<ul>
+<li>:label; if not defined, the name is humanized and rendered as the label</li>
+<li>:required</li>
+<li>:default</li>
+</ul><p><img src="http://i.imgur.com/B1Re6.png" alt="The Setting"></p>
+
+<h4>Consume Events</h4>
+
+<p>An App can consume events by defining methods in <code>EventHandler</code> module.</p>
+
+<pre><code>module Dummy
+  module EventHandler
+    def ticket_created; end
+    def ticket_updated; end
+
+    def reply_created; end
+    def reply_updated; end
+
+    def all_events; end
+  end
+end
+</code></pre>
+
+<p>The event <code>ticket.created</code> triggers the method <code>ticket_created</code> and so on. The method <code>all_events</code> if defined is triggered for all events.</p>
+
+<p>All the methods have access to the following information:</p>
+
+<ul>
+<li>
+<strong>auth</strong>: This is required to get SupportBee API access for the helpdesk which triggered the App. </li>
+<li>
+<strong>settings</strong>: This contains the values of the settings defined by the app for the helpdesk which triggered the App.</li>
+<li>
+<strong>payload</strong>: This contains the event/action relavent data. This changes depending on the type of event or action.</li>
+</ul><p>Here is an example of a Campfire App posting to campfire on ticket creation.</p>
+
+<pre><code>def ticket_created
+  campfire = Tinder::Campfire.new settings.subdomain, :token =&gt; settings.token
+  room = campfire.find_room_by_name(settings.room)
+  room.speak "New Ticket: #{payload.ticket.subject}"
+end
+</code></pre>
+
+<h4>Respond To Actions</h4>
+
+<p>An App can respond to actions by defining methods in <code>ActionHandler</code>. Currently only one action is allowed; <em>button</em>.</p>
+
+<pre><code>module ActionHandler
+  def button
+    # Handle Action here
+    [200, "Success"]
+  end
+
+  def all_actions
+  end
+end
+</code></pre>
+
+<p><strong>Button Action</strong></p>
+
+<p>For a button action to work; you need to configure it in <code>config.yml</code></p>
+
+<pre><code>action:
+  button:
+    screens:
+    - all
+    - unassigned
+    label: Send To Dummy
+</code></pre>
+
+<p>This renders a <code>Send To Dummy</code> action in the SupportBee UI for <code>Unassigned</code> and <code>All</code>. When this action is triggered in the UI the method <code>button</code> is triggered.All actions must return a status and a optional message.<br><code>[200, "Successfully sent to Dummy"]</code></p>
+
+<p>All action methods have access to the same information as events. In addition to these a list of ticket ids selected in the listing at the time of the trigger is also provided. A button action can also define an overlay which can be used to accept more information. <a href="http://handlebarsjs.com/">Handlebars</a> templating language is used to specify the overlay. The template is defined in <code>APP_ROOT/assets/views/button/overlay.hbs</code>. When the button action is triggered this overlay will receive the list of ticket ids selected. A boilerplate of the handlebars code is as follows:</p>
+
+<pre><code>{{#ifTicketsCountZero tickets}}
+  Do Something
+{{/ifTicketsCountZero}}
+
+{{#ifTicketsCountOne tickets}}
+  Iterate over one ticket
+  {{#each tickets}}
+    {{subject}}
+  {{/each}}
+{{/ifTicketsCountZero}}
+
+{{#ifTicketsCountZero tickets}}
+  Iterate over many tickets
+  {{#each tickets}}
+    {{subject}}
+  {{/each}}
+{{/ifTicketsCountZero}}
+</code></pre>
+
+<h3>Testing/Development Console</h3>
+
+<p>We have created a simple console to easily trigger your Apps with sample payloads. Right now it only supports <em>Events</em>. Soon you will be able to trigger actions also. To access the console of your app go to <code>/{app_slug}/console</code> when running the platform locally.</p>
+
+<p><img src="http://i.imgur.com/35VpD.png" alt="The Console"></p>
+
+<h3>More Docs to come:</h3>
+
+<h4>SupportBee Objects</h4>
+
+<h4>Event and Action Payloads</h4>
+
+<h4>List of Apps to be developed</h4>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/SupportBee/SupportBee-Apps/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/SupportBee/SupportBee-Apps/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/SupportBee/SupportBee-Apps"></a> is maintained by <a href="https://github.com/SupportBee">SupportBee</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
